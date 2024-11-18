@@ -1,5 +1,5 @@
 module Main where
-
+  
 import Text.CSV
 import System.IO (readFile)
 import Data.Maybe (fromMaybe)
