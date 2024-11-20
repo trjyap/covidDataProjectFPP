@@ -29,10 +29,10 @@ main =
     Left err -> putStrLn $ "Error parsing CSV: " ++ show err
     Right records ->
       let (totalBeds, totalBedsCovid) = foldl' processRecord (0, 0) (tail records) -- Skip header
-          ratio = if totalBeds == 0 then 0 else fromIntegral totalBedsCovid / fromIntegral totalBeds
-      in putStrLn ("Total beds: " ++ show totalBeds) >>
-         putStrLn ("Total beds for COVID-19: " ++ show totalBedsCovid) >>
-         putStrLn ("Ratio of beds for COVID-19 to total beds: " ++ show ratio)
+          ratio = if totalBeds == 0 then Nothing else Just (fromIntegral totalBedsCovid / fromIntegral totalBeds)
+      in putStrLn ("Total beds: " ++ show totalBeds ++ "\n" ++
+                   "Total beds for COVID-19: " ++ show totalBedsCovid ++ "\n" ++
+                   "Ratio of beds for COVID-19 to total beds: " ++ show ratio)
 
 -- Processes each record and accumulate the totals
 processRecord :: (Int, Int) -> Record -> (Int, Int)
