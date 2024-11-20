@@ -5,18 +5,18 @@ import System.IO (readFile)
 import Data.Maybe (fromMaybe)
 import Data.List (foldl')
 
--- Define the indices for the columns
+-- Defines the column indices
 dateIndex, stateIndex, bedsIndex, bedsCovidIndex :: Int
 dateIndex = 0
 stateIndex = 1
 bedsIndex = 2
 bedsCovidIndex = 3
 
--- Function to parse an integer from a string, with a default value of 0
+-- Parses an integer from a string, with a default value of 0
 parseInt :: String -> Int
 parseInt s = fromMaybe 0 (readMaybe s)
 
--- Function to safely read an integer
+-- Ensures safety when reading an integer
 readMaybe :: Read a => String -> Maybe a
 readMaybe s = case reads s of
   [(val, "")] -> Just val
@@ -34,7 +34,7 @@ main =
          putStrLn ("Total beds for COVID-19: " ++ show totalBedsCovid) >>
          putStrLn ("Ratio of beds for COVID-19 to total beds: " ++ show ratio)
 
--- Function to process each record and accumulate the totals
+-- Processes each record and accumulate the totals
 processRecord :: (Int, Int) -> Record -> (Int, Int)
 processRecord (totalBeds, totalBedsCovid) record =
   if length record > bedsCovidIndex then
