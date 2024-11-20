@@ -17,17 +17,12 @@ extractStateAndBeds row =
 
 -- Main function
 main :: IO ()
-main = do
-  -- Read the CSV file
-  csvData <- readFile "hospital.csv"
-  
-  case parseCSV "hospital.csv" csvData of
-    Left err -> putStrLn $ "Error parsing CSV: " ++ show err
-    Right records -> do
-      -- Extract valid (state, beds) pairs
-      let stateBeds = mapMaybe extractStateAndBeds (tail records) -- Skip header row
-      -- Find the state with the maximum number of beds
-      let maxState = maximumBy (comparing snd) stateBeds
-      -- Print the result
-      putStrLn $ "State with the highest total hospital beds: " 
-              ++ fst maxState ++ " (" ++ show (snd maxState) ++ " beds)"
+main =
+  readFile "hospital.csv" >>= \csvData ->
+    case parseCSV "hospital.csv" csvData of
+      Left err -> putStrLn $ "Error parsing CSV: " ++ show err
+      Right records ->
+        let stateBeds = mapMaybe extractStateAndBeds (tail records) -- Skip header row
+            maxState = maximumBy (comparing snd) stateBeds
+        in putStrLn $ "State with the highest total hospital beds: " 
+                   ++ fst maxState ++ " (" ++ show (snd maxState) ++ " beds)"
