@@ -23,18 +23,16 @@ readMaybe s = case reads s of
   _           -> Nothing
 
 main :: IO ()
-main = do
-  -- Read the CSV file
-  csvData <- readFile "hospital.csv"
-  let parsedCSV = parseCSV "hospital.csv" csvData
-  case parsedCSV of
+main =
+  readFile "hospital.csv" >>= \csvData ->
+  case parseCSV "hospital.csv" csvData of
     Left err -> putStrLn $ "Error parsing CSV: " ++ show err
-    Right records -> do
+    Right records ->
       let (totalBeds, totalBedsCovid) = foldl' processRecord (0, 0) (tail records) -- Skip header
           ratio = if totalBeds == 0 then 0 else fromIntegral totalBedsCovid / fromIntegral totalBeds
-      putStrLn $ "Total beds: " ++ show totalBeds
-      putStrLn $ "Total beds for COVID-19: " ++ show totalBedsCovid
-      putStrLn $ "Ratio of beds for COVID-19 to total beds: " ++ show ratio
+      in putStrLn ("Total beds: " ++ show totalBeds) >>
+         putStrLn ("Total beds for COVID-19: " ++ show totalBedsCovid) >>
+         putStrLn ("Ratio of beds for COVID-19 to total beds: " ++ show ratio)
 
 -- Function to process each record and accumulate the totals
 processRecord :: (Int, Int) -> Record -> (Int, Int)
