@@ -1,4 +1,4 @@
-module Main where
+module Q3 where
 
 import Text.CSV
 import Data.List (groupBy, sortBy)

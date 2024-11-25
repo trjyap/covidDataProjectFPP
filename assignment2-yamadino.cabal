@@ -62,7 +62,7 @@ executable assignment2-yamadino
     main-is:          Main.hs
 
     -- Modules included in this executable, other than Main.
-    -- other-modules:
+    other-modules:   Q2, Q3
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:

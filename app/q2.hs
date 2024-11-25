@@ -1,4 +1,4 @@
-module Main where
+module Q2 where
   
 import Text.CSV
 import System.IO (readFile)

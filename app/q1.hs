@@ -1,4 +1,4 @@
-module Main where
+module Q1 where
 
 -- Importing necessary modules
 import Text.CSV                    -- For reading and parsing CSV files
