@@ -21,4 +21,4 @@ runWithArgs args = case args of
 -- Terminal example: (Q1 as example) 
 --  ghci -iapp app/Main.hs
 --  Q1.main
--- =========================================================
+-- ========================================================= 
