@@ -16,3 +16,9 @@ runWithArgs args = case args of
     ["q2"] -> Q2.main
     ["q3"] -> Q3.main
     _ -> putStrLn "Invalid argument. Please provide a valid question number (q1, q2, q3)"
+
+-- Run instructions ========================================
+-- Terminal example: (Q1 as example) 
+--  ghci -iapp app/Main.hs
+--  Q1.main
+-- =========================================================
