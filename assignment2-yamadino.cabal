@@ -59,10 +59,10 @@ executable assignment2-yamadino
     import:           warnings
 
     -- .hs or .lhs file containing the Main module.
-    main-is:          Q1.hs
+    main-is:          Main.hs
 
     -- Modules included in this executable, other than Main.
-    other-modules:   Q2, Q3
+    other-modules:   Q1, Q2, Q3
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
