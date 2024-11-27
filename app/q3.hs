@@ -1,9 +1,10 @@
 module Q3 where
 
-import Text.CSV ( parseCSV, Record )
+import Text.CSV (parseCSV, Record)
 import Data.List (groupBy, sortBy, elemIndex)
 import Data.Function (on)
 import Data.Maybe (mapMaybe)
+import Text.Printf (printf)
 
 -- Helper function for safe list indexing
 (!!?) :: [a] -> Int -> Maybe a
@@ -61,8 +62,6 @@ main =
                 averages = calculateAverages categoryData
             in mapM_
                  (\(state, (avgS, avgC, avgN)) ->
-                    putStrLn $ "State: " ++ state
-                              ++ ", Avg Suspected: " ++ show avgS
-                              ++ ", Avg COVID Positive: " ++ show avgC
-                              ++ ", Avg Non-COVID: " ++ show avgN)
+                    printf "State: %s, Avg Suspected: %.2f, Avg COVID Positive: %.2f, Avg Non-COVID: %.2f\n"
+                      state avgS avgC avgN)
                  averages
