@@ -11,9 +11,9 @@ import Text.Printf (printf)
 getUserChoice :: IO Int
 getUserChoice =
     putStrLn "Enter question number (1, 2, 3): " >>
-    putStrLn "1. Q1" >>
-    putStrLn "2. Q2" >>
-    putStrLn "3. Q3" >>
+    putStrLn "1. Q1 - State with highest total hospital beds" >>
+    putStrLn "2. Q2 - Ratio of beds for COVID-19" >>
+    putStrLn "3. Q3 - Average number of admitted cases" >>
     putStrLn "4. Exit" >>
     getLine >>= \input -> return (read input)
 
