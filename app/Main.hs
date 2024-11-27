@@ -112,44 +112,46 @@ list !!? i
   | otherwise = Nothing
 
 -- Processes each row to return state name, suspected, covid positive, and non-covid patients if present
-extractCategoryData :: [String] -> Record -> Maybe (String, Int, Int, Int)
+extractCategoryData :: [String] -> Record -> Maybe (String, Int, Int, Int, Int)
 extractCategoryData headers row =
     -- Extracts the indices of the columns
   let stateIndex = elemIndex "state" headers
       suspectedIndex = elemIndex "admitted_pui" headers
       covidPositiveIndex = elemIndex "admitted_covid" headers
+      totalAdmitsIndex = elemIndex "admitted_total" headers
       nonCovidIndex = elemIndex "hosp_noncovid" headers
-  in case (stateIndex, suspectedIndex, covidPositiveIndex, nonCovidIndex) of
-       (Just si, Just susi, Just cpi, Just nci) ->
-         case (row !!? si, row !!? susi, row !!? cpi, row !!? nci) of
-           (Just state, Just suspectedStr, Just positiveStr, Just nonCovidStr) ->
+  in case (stateIndex, suspectedIndex, covidPositiveIndex, totalAdmitsIndex, nonCovidIndex) of
+       (Just si, Just susi, Just cpi, Just tai, Just nci) ->
+         case (row !!? si, row !!? susi, row !!? cpi, row !!? tai, row !!? nci) of
+           (Just state, Just suspectedStr, Just positiveStr, Just totalAdmitsStr, Just nonCovidStr) ->
             -- Converts the strings to integers
-             case (reads suspectedStr, reads positiveStr, reads nonCovidStr) of
-               ([(suspected, "")], [(covidPositive, "")], [(nonCovid, "")]) ->
-                 Just (state, suspected, covidPositive, nonCovid)
+             case (reads suspectedStr, reads positiveStr, reads totalAdmitsStr, reads nonCovidStr) of
+               ([(suspected, "")], [(covidPositive, "")], [(totalAdmits, "")], [(nonCovid, "")]) ->
+                 Just (state, suspected, covidPositive, totalAdmits, nonCovid)
                _ -> Nothing
            _ -> Nothing
        _ -> Nothing
 
 -- Calculates the averages for each state
-calculateAverages :: [(String, Int, Int, Int)] -> [(String, (Double, Double, Double))]
+calculateAverages :: [(String, Int, Int, Int, Int)] -> [(String, (Double, Double, Int, Double))]
 calculateAverages records =
     -- Groups the records by state
-  let grouped = groupBy ((==) `on` fst) . sortBy (compare `on` fst) $ map (\(state, s, c, n) -> (state, (s, c, n))) records
+  let grouped = groupBy ((==) `on` fst) . sortBy (compare `on` fst) $ map (\(state, s, c, t, n) -> (state, (s, c, t, n))) records
   in map calculateStateAverage grouped
   where
     -- Helper function for state average calculation
     calculateStateAverage recordsForState =
       let state = fst (head recordsForState)
             -- Accumulates the totals row by row
-          totals = foldr (\(_, (s, c, n)) (ts, tc, tn, cnt) ->
-                          (ts + s, tc + c, tn + n, cnt + 1))
-                         (0, 0 :: Int, 0 :: Int, 0 :: Int)
+          totals = foldr (\(_, (s, c, t, n)) (ts, tc, tt, tn, cnt) ->
+                          (ts + s, tc + c, tt + t, tt - ts - tc, cnt + 1)) -- Non-COVID = Total - Suspected - COVID, always 0 according to the data
+                         (0, 0 :: Int, 0 :: Int, 0 :: Int, 0 :: Int)
                          recordsForState
-          (totalSuspected, totalCovidPositive, totalNonCovid, count) = totals
+          (totalSuspected, totalCovidPositive, totalAdmits, totalNonCovid, count) = totals
       in (state,
           (fromIntegral totalSuspected / fromIntegral count,
            fromIntegral totalCovidPositive / fromIntegral count,
+           totalAdmits, 
            fromIntegral totalNonCovid / fromIntegral count))
 
 q3 :: IO ()
@@ -166,8 +168,8 @@ q3 =
                 averages = calculateAverages categoryData
             -- Maps monadically with `mapM_` to print the averages
             in mapM_
-                 (\(state, (avgS, avgC, avgN)) ->
-                    printf "State: %s, Avg Suspected: %.2f, Avg COVID Positive: %.2f, Avg Non-COVID: %.2f\n"
-                      state avgS avgC avgN)
+                 (\(state, (avgS, avgC, ttlT, avgN)) ->
+                    printf "State: %s, Avg Suspected: %.2f, Avg COVID Positive: %.2f, Ttl Admits: %d, Avg Non-COVID: %.2f\n"
+                      state avgS avgC ttlT avgN)
                  averages >>
                  putStrLn ""
