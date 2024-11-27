@@ -1,6 +1,6 @@
 module Q3 where
 
-import Text.CSV
+import Text.CSV ( parseCSV, Record )
 import Data.List (groupBy, sortBy, elemIndex)
 import Data.Function (on)
 import Data.Maybe (mapMaybe)
@@ -14,10 +14,10 @@ list !!? i
 -- Function to extract a record into (state, suspected, covidPositive, nonCovid)
 extractCategoryData :: [String] -> Record -> Maybe (String, Int, Int, Int)
 extractCategoryData headers row =
-  let stateIndex = elemIndex "State" headers
-      suspectedIndex = elemIndex "Suspected" headers
-      covidPositiveIndex = elemIndex "COVID Positive" headers
-      nonCovidIndex = elemIndex "Non-COVID" headers
+  let stateIndex = elemIndex "state" headers
+      suspectedIndex = elemIndex "admitted_pui" headers
+      covidPositiveIndex = elemIndex "admitted_covid" headers
+      nonCovidIndex = elemIndex "hosp_noncovid" headers
   in case (stateIndex, suspectedIndex, covidPositiveIndex, nonCovidIndex) of
        (Just si, Just susi, Just cpi, Just nci) ->
          case (row !!? si, row !!? susi, row !!? cpi, row !!? nci) of
