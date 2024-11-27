@@ -27,9 +27,7 @@ main :: IO ()
 main =
   -- Read the CSV file and bind its content to `csvData`
   readFile "hospital.csv" >>= \csvData ->
-    -- Parse the CSV data into a structured format (list of rows)
     case parseCSV "hospital.csv" csvData of
-      -- If parsing fails, print an error message
       Left err -> putStrLn $ "Error parsing CSV: " ++ show err
       -- If parsing succeeds, process the data
       Right records ->
