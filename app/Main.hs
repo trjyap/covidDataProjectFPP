@@ -7,64 +7,57 @@ import Data.Ord (comparing)
 import Data.Function (on)
 import Text.Printf (printf)
 
+-- Prompts user to select a question
 getUserChoice :: IO Int
-getUserChoice = 
-    putStrLn "Enter question number (1, 2, 3): " >> 
+getUserChoice =
+    putStrLn "Enter question number (1, 2, 3): " >>
     putStrLn "1. Q1" >>
     putStrLn "2. Q2" >>
     putStrLn "3. Q3" >>
     putStrLn "4. Exit" >>
     getLine >>= \input -> return (read input)
 
+-- Processes the user's choice and runs the corresponding question until exit is chosen
 processUserChoice :: Int -> IO ()
 processUserChoice choice = case choice of
     1 -> q1 >> getUserChoice >>= processUserChoice
     2 -> q2 >> getUserChoice >>= processUserChoice
     3 -> q3 >> getUserChoice >>= processUserChoice
     4 -> putStrLn "Exiting program"
-    _ -> putStrLn "Invalid choice. Please provide a valid question number (1, 2, 3)"
+    _ -> putStrLn "Invalid choice. Please provide a valid question number (1, 2, 3) or 4 to exit"
 
+-- Main function to run the program
 main :: IO ()
 main = getUserChoice >>= processUserChoice
 
 -- Question 1 ==============================================
--- Function to extract the state name and the number of hospital beds from a row in the CSV file
--- This function processes each row to return a `Maybe` (optional) result
+-- Processes each row to return a state name and number of hospital beds if present
 extractStateAndBeds :: Record -> Maybe (String, Int)
 extractStateAndBeds row =
   case row of
-    -- Check if the row has at least three fields: the second being the state and the third being beds
+    -- Checks if the row has at least three fields: 2nd being the state and 3rd being beds
     (_:state:bedsStr:_) ->
-      -- Try to convert the `bedsStr` (a string) into an integer using `reads`
+      -- Converts `bedsStr` (a string) into an integer using `reads`
       case reads bedsStr :: [(Int, String)] of
-        -- If successful, return the state and the number of beds as a `Just` value
         [(beds, "")] -> Just (state, beds)
-        -- If conversion fails, return `Nothing` (invalid data)
         _            -> Nothing
-    -- If the row doesn't match the expected structure, return `Nothing`
     _                   -> Nothing
 
 q1 :: IO ()
 q1 =
-  -- Read the CSV file and bind its content to `csvData`
   readFile "hospital.csv" >>= \csvData ->
     case parseCSV "hospital.csv" csvData of
       Left err -> putStrLn $ "Error parsing CSV: " ++ show err
-      -- If parsing succeeds, process the data
       Right records ->
-        -- Process the rows of the CSV:
-        let 
-            -- Use `mapMaybe` to extract valid (state, beds) pairs, ignoring invalid rows
-            -- `tail records` skips the header row (assumes the first row is a header)
-            stateBeds = mapMaybe extractStateAndBeds (tail records)
-
-            -- Find the state with the maximum number of beds
-            -- `maximumBy` compares the second element (number of beds) in each pair
+        let
+            -- `mapMaybe` to extracts valid (state, beds) pairs, ignoring invalid rows
+            stateBeds = mapMaybe extractStateAndBeds (tail records) -- skips the header row
+            -- `maximumBy` compares the second element `beds` in each pair to get highest total beds
             maxState = maximumBy (comparing snd) stateBeds
-        in 
-            -- Print the result: the state name and its total number of hospital beds
-            putStrLn $ "State with the highest total hospital beds: " 
-                    ++ fst maxState ++ " (" ++ show (snd maxState) ++ " beds)" ++ "\n"
+        in
+            -- `uncurry` splits `maxState` to work on pairs correspondingly (state name and total beds)
+            uncurry (printf "State with the highest total hospital beds: %s (%d beds)\n") maxState >>
+            putStrLn ""
 
 
 -- Question 2 ==============================================
@@ -94,7 +87,7 @@ processRecord bedsIndex bedsCovidIndex (totalBeds, totalBedsCovid) record =
 
 
 q2 :: IO ()
-q2 = 
+q2 =
     readFile "hospital.csv" >>= \csvData ->
   case parseCSV "hospital.csv" csvData of
     Left err -> putStrLn $ "Error when parsing CSV: " ++ show err
@@ -110,16 +103,18 @@ q2 =
                       "Ratio of beds for COVID-19 to total beds: " ++ maybe "N/A" (printf "%.4f") ratio ++ "\n") -- 4 decimal places for ratio and N/A if totalBeds is 0
         _ -> putStrLn "Error: Missing column(s) in the CSV file: beds, beds_covid"
 
+
 -- Question 3 ==============================================
--- Function to extract a record into (state, suspected, covidPositive, nonCovid)
--- Helper function for safe list indexing
+-- Prevents index out of bounds error
 (!!?) :: [a] -> Int -> Maybe a
 list !!? i
   | i >= 0 && i < length list = Just (list !! i)
   | otherwise = Nothing
 
+-- Processes each row to return state name, suspected, covid positive, and non-covid patients if present
 extractCategoryData :: [String] -> Record -> Maybe (String, Int, Int, Int)
 extractCategoryData headers row =
+    -- Extracts the indices of the columns
   let stateIndex = elemIndex "state" headers
       suspectedIndex = elemIndex "admitted_pui" headers
       covidPositiveIndex = elemIndex "admitted_covid" headers
@@ -128,6 +123,7 @@ extractCategoryData headers row =
        (Just si, Just susi, Just cpi, Just nci) ->
          case (row !!? si, row !!? susi, row !!? cpi, row !!? nci) of
            (Just state, Just suspectedStr, Just positiveStr, Just nonCovidStr) ->
+            -- Converts the strings to integers
              case (reads suspectedStr, reads positiveStr, reads nonCovidStr) of
                ([(suspected, "")], [(covidPositive, "")], [(nonCovid, "")]) ->
                  Just (state, suspected, covidPositive, nonCovid)
@@ -135,16 +131,20 @@ extractCategoryData headers row =
            _ -> Nothing
        _ -> Nothing
 
+-- Calculates the averages for each state
 calculateAverages :: [(String, Int, Int, Int)] -> [(String, (Double, Double, Double))]
 calculateAverages records =
+    -- Groups the records by state
   let grouped = groupBy ((==) `on` fst) . sortBy (compare `on` fst) $ map (\(state, s, c, n) -> (state, (s, c, n))) records
   in map calculateStateAverage grouped
   where
+    -- Helper function for state average calculation
     calculateStateAverage recordsForState =
       let state = fst (head recordsForState)
-          totals = foldr (\(_, (s, c, n)) (ts, tc, tn, count) ->
-                          (ts + s, tc + c, tn + n, count + 1))
-                         (0, 0, 0, 0)
+            -- Accumulates the totals row by row
+          totals = foldr (\(_, (s, c, n)) (ts, tc, tn, cnt) ->
+                          (ts + s, tc + c, tn + n, cnt + 1))
+                         (0, 0 :: Int, 0 :: Int, 0 :: Int)
                          recordsForState
           (totalSuspected, totalCovidPositive, totalNonCovid, count) = totals
       in (state,
@@ -153,7 +153,7 @@ calculateAverages records =
            fromIntegral totalNonCovid / fromIntegral count))
 
 q3 :: IO ()
-q3 = 
+q3 =
     readFile "hospital.csv" >>= \csvData ->
     case parseCSV "hospital.csv" csvData of
       Left err -> putStrLn $ "Error parsing CSV: " ++ show err
@@ -161,11 +161,13 @@ q3 =
         case records of
           [] -> putStrLn "Error: Empty CSV file"
           (header:rows) ->
-            let categoryData = mapMaybe (extractCategoryData header) rows -- Use the header row to determine column indices
+            -- Extracts valid rows only with `mapMaybe` (state, suspected, covidPositive, nonCovid)
+            let categoryData = mapMaybe (extractCategoryData header) rows -- Uses the header row to determine column indices
                 averages = calculateAverages categoryData
+            -- Maps monadically with `mapM_` to print the averages
             in mapM_
                  (\(state, (avgS, avgC, avgN)) ->
                     printf "State: %s, Avg Suspected: %.2f, Avg COVID Positive: %.2f, Avg Non-COVID: %.2f\n"
                       state avgS avgC avgN)
                  averages >>
-                 putStrLn "\n"
+                 putStrLn ""
